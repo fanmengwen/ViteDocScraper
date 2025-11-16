@@ -1,0 +1,23 @@
+{
+  "name": "vite-scraper",
+  "version": "1.0.0",
+  "description": "ViteDocScraper - scrape Vite Chinese documentation into local Markdown files",
+  "main": "index.js",
+  "scripts": {
+    "scrape": "node index.js"
+  },
+  "keywords": [
+    "vite",
+    "scraper",
+    "documentation",
+    "markdown"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0-rc.12",
+    "turndown": "^7.2.0",
+    "turndown-plugin-gfm": "^1.0.2"
+  }
+}

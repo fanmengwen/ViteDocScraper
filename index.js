@@ -8,9 +8,17 @@ const turndownPluginGfm = require("turndown-plugin-gfm");
 const gfm = turndownPluginGfm.gfm;
 
 const BASE_URL = "https://cn.vite.dev";
-const ENTRY_PATH = "/guide/";
-const ENTRY_URL = `${BASE_URL}${ENTRY_PATH}`;
 const OUTPUT_ROOT = path.join(__dirname, "docs");
+
+// 配置项：可以添加多个入口页面来爬取不同的文档分类
+// 每个入口页面的侧边栏都会被解析，提取其中的所有文档链接
+const ENTRY_PAGES = [
+  "/guide/", // 指南文档
+  "/config/", // 配置文档
+  // 可以继续添加其他入口页面，例如：
+  // "/plugins/",
+  // "/api/",
+];
 
 const turndownService = new TurndownService({
   codeBlockStyle: "fenced",
@@ -217,17 +225,40 @@ async function run() {
   console.log(`\n${"=".repeat(60)}`);
   console.log(`🚀 ViteDocScraper - Starting...`);
   console.log(`${"=".repeat(60)}\n`);
-  console.log(`📄 Fetching entry page: ${ENTRY_URL}`);
 
-  const entryHtml = await fetchHtml(ENTRY_URL);
-  const docs = extractSidebarLinks(entryHtml);
+  // 收集所有入口页面的文档链接
+  const allDocs = new Map(); // 使用 Map 去重
+
+  console.log(`📄 Fetching ${ENTRY_PAGES.length} entry page(s)...\n`);
+
+  for (const entryPath of ENTRY_PAGES) {
+    const entryUrl = `${BASE_URL}${entryPath}`;
+    try {
+      console.log(`  → ${entryUrl}`);
+      const entryHtml = await fetchHtml(entryUrl);
+      const docs = extractSidebarLinks(entryHtml);
+
+      // 将文档添加到 Map 中（自动去重）
+      docs.forEach((doc) => {
+        if (!allDocs.has(doc.url)) {
+          allDocs.set(doc.url, doc);
+        }
+      });
+
+      console.log(`    Found ${docs.length} links from this page`);
+    } catch (error) {
+      console.error(`    ❌ Failed to fetch ${entryUrl}: ${error.message}`);
+    }
+  }
+
+  const docs = Array.from(allDocs.values());
 
   if (docs.length === 0) {
-    console.error("❌ No documentation links found! Check CSS selectors.");
+    console.error("\n❌ No documentation links found! Check CSS selectors.");
     return;
   }
 
-  console.log(`\n✅ Discovered ${docs.length} documentation pages\n`);
+  console.log(`\n✅ Discovered ${docs.length} unique documentation pages\n`);
 
   // Group docs by category for better logging
   const groupedDocs = docs.reduce((acc, doc) => {
